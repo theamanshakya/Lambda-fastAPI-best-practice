@@ -1,65 +1,48 @@
 # FastAPI Snowflake Lambda Architecture
 
-This project demonstrates a production-ready architecture for building APIs that can run both locally using FastAPI and on AWS Lambda with Snowflake database integration.
+A production-ready FastAPI application that can run both locally and on AWS Lambda with Snowflake database integration.
 
--- Project Structure
+## Project Structure
 
 ```
 project/
 ├── src/
-│   ├── __init__.py
+│   ├── modules/                # Feature modules
+│   │   ├── users/             # User module
+│   │   │   ├── controller.py  # API routes
+│   │   │   ├── model.py      # Database models
+│   │   │   ├── schema.py     # Pydantic schemas
+│   │   │   ├── service.py    # Business logic
+│   │   │   ├── repository.py # Database operations
+│   │   │   └── queries.py    # SQL queries
+│   │   └── auth/             # Auth module (similar structure)
 │   ├── core/
-│   │   ├── __init__.py
-│   │   ├── application.py    # Application factory
+│   │   ├── application.py    # App factory
 │   │   ├── exceptions.py     # Custom exceptions
-│   │   └── middleware.py     # Request middleware
-│   ├── config.py            # Configuration settings
-│   ├── database.py          # Database connection pool
-│   ├── models/             # Database models
-│   ├── repositories/       # Database operations
-│   │   └── user_repository.py
-│   ├── routes/            # API endpoints
-│   │   └── user_routes.py
-│   ├── services/          # Business logic
-│   │   └── user_service.py
-│   └── schemas/           # Pydantic models
-│       └── user_schema.py
-├── lambda_handler.py      # AWS Lambda handler
-├── local_app.py          # Local FastAPI application
-├── requirements.txt      # Dependencies
-└── README.md
+│   │   └── middleware.py     # Middleware
+│   ├── utils/
+│   │   ├── logger.py         # Logging utilities
+│   │   └── validators.py     # Validation utilities
+│   ├── config.py             # Configuration
+│   └── database.py           # Database connection
+├── lambda_handler.py         # AWS Lambda handler
+├── local_app.py             # Local FastAPI application
+└── requirements.txt         # Dependencies
 ```
 
--- Architecture Overview
+## Features
 
-The application follows a clean architecture pattern with the following layers:
+- **Modular Architecture**: Clean separation of concerns with feature modules
+- **Type Safety**: Full type hinting with Pydantic models
+- **Database Integration**: Snowflake connection pooling and query management
+- **Error Handling**: Centralized error handling with custom exceptions
+- **Logging**: Structured JSON logging with request tracking
+- **Validation**: Custom validators for data integrity
+- **Documentation**: Auto-generated OpenAPI documentation
 
-1. **Presentation Layer** (routes/)
-   - Handles HTTP requests/responses
-   - Input validation
-   - Route definitions
+## Quick Start
 
-2. **Service Layer** (services/)
-   - Business logic
-   - Orchestration
-   - Error handling
-
-3. **Repository Layer** (repositories/)
-   - Database operations
-   - Data access patterns
-   - Query handling
-
-4. **Core Layer** (core/)
-   - Application configuration
-   - Middleware
-   - Exception handling
-   - Common utilities
-
--- Setup and Installation
-
--- 1. Local Development Environment
-
-1. Create a virtual environment:
+1. Create virtual environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -70,7 +53,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the project root:
+3. Set up environment variables in `.env`:
 ```plaintext
 ENVIRONMENT=development
 SNOWFLAKE_ACCOUNT=your_account
@@ -83,57 +66,97 @@ DB_POOL_MIN_CONNECTIONS=1
 DB_POOL_MAX_CONNECTIONS=10
 ```
 
--- 2. Database Setup
-
-1. Create the required table in Snowflake:
-```sql
-CREATE TABLE users (
-    id INTEGER AUTOINCREMENT,
-    email VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    PRIMARY KEY (id)
-);
-```
-
--- Key Features
-
--- 1. Connection Pooling
-- Efficient database connection management
-- Configurable pool size
-- Automatic connection cleanup
-
--- 2. Error Handling
-- Custom exception classes
-- Structured error responses
-- Detailed error tracking
-
--- 3. Request Middleware
-- Request ID tracking
-- Performance monitoring
-- Request/Response logging
-
--- 4. Environment-based Configuration
-- Development/Staging/Production environments
-- Environment-specific settings
-- Cached configuration loading
-
--- Local Development
-
-1. Run the FastAPI application:
+4. Run locally:
 ```bash
 python local_app.py
 ```
 
-2. Access the API:
-- API endpoints: `http://localhost:8000/api/v1/`
-- Swagger documentation: `http://localhost:8000/docs` (disabled in production)
-- ReDoc documentation: `http://localhost:8000/redoc` (disabled in production)
+## API Endpoints
 
--- AWS Deployment
+### Users Module
 
--- 1. Prepare Deployment Package
+```bash
+# Create user
+POST /api/v1/users/
+{
+    "email": "user@example.com",
+    "name": "Test User"
+}
 
-1. Create a deployment package:
+# Get user by ID
+GET /api/v1/users/{user_id}
+
+# List users
+GET /api/v1/users/?skip=0&limit=10
+```
+
+## Module Structure
+
+Each feature module follows a consistent structure:
+
+### 1. Controller (controller.py)
+- API route definitions
+- Request/Response handling
+- Input validation
+- Dependency injection
+
+### 2. Model (model.py)
+- Database model definitions
+- Data structure definitions
+- Type hints
+
+### 3. Schema (schema.py)
+- Pydantic models for request/response
+- Data validation
+- Type conversion
+
+### 4. Service (service.py)
+- Business logic
+- Error handling
+- Data processing
+
+### 5. Repository (repository.py)
+- Database operations
+- Query execution
+- Data mapping
+
+### 6. Queries (queries.py)
+- SQL query definitions
+- Query parameters
+- Database operations
+
+## Development
+
+### Adding a New Module
+
+1. Create a new module directory:
+```bash
+mkdir src/modules/new_module
+```
+
+2. Create module files:
+```bash
+touch src/modules/new_module/{__init__,controller,model,schema,service,repository,queries}.py
+```
+
+3. Register routes in application.py:
+```python
+from src.modules.new_module.controller import router as new_module_router
+app.include_router(new_module_router, prefix="/api/v1/new-module")
+```
+
+### Testing
+
+Run tests with pytest:
+```bash
+pytest tests/
+```
+
+## Deployment
+
+### AWS Lambda
+
+1. Create deployment package:
 ```bash
 pip install --target ./package -r requirements.txt
 cd package
@@ -143,99 +166,33 @@ zip -g lambda_deployment.zip lambda_handler.py
 zip -gr lambda_deployment.zip src/
 ```
 
--- 2. AWS Lambda Setup
+2. Configure Lambda:
+- Runtime: Python 3.9+
+- Handler: lambda_handler.handler
+- Memory: 256MB (minimum)
+- Timeout: 30 seconds
 
-1. Create a new Lambda function:
-   - Runtime: Python 3.9+
-   - Handler: `lambda_handler.handler`
-   - Memory: 256MB (minimum recommended)
-   - Timeout: 30 seconds
+3. Set up API Gateway:
+- Create REST API
+- Configure proxy integration
+- Deploy to stage
 
-2. Environment Variables:
-   - Set all configuration variables from `.env`
-   - Use AWS Secrets Manager for sensitive data
-   - Set `ENVIRONMENT=production`
+## Best Practices
 
--- 3. API Gateway Setup
+- Use dependency injection for services
+- Implement proper error handling
+- Add logging for debugging
+- Use type hints everywhere
+- Keep modules independent
+- Follow SOLID principles
 
-1. Create a new REST API
-2. Configure proxy integration
-3. Set up CORS if needed
-4. Deploy to desired stage
+## Contributing
 
--- Best Practices
+1. Fork the repository
+2. Create a feature branch
+3. Implement changes with tests
+4. Submit a pull request
 
--- 1. Error Handling
-```python
-try:
-    result = await service.process()
-except CustomHTTPException as e:
-    # Already formatted for API response
-    raise e
-except Exception as e:
-    # Unexpected errors
-    raise CustomHTTPException(
-        status_code=500,
-        detail="Internal server error",
-        error_code="INTERNAL_ERROR",
-        extra={"original_error": str(e)}
-    )
-```
+## License
 
--- 2. Database Operations
-```python
-async with DatabasePool.get_connection() as conn:
-    try:
-        cursor = conn.cursor()
-        await cursor.execute("SELECT * FROM users")
-        return await cursor.fetchall()
-    except Exception as e:
-        logger.error(f"Database error: {e}")
-        raise
-```
-
--- 3. Middleware Usage
-```python
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    return response
-```
-
--- Monitoring and Maintenance
-
-1. **CloudWatch Metrics**
-   - Lambda execution duration
-   - Database connection pool usage
-   - API response times
-   - Error rates
-
-2. **Logging**
-   - Request/Response logging
-   - Error tracking
-   - Performance monitoring
-
-3. **Health Checks**
-   - Database connectivity
-   - External service status
-   - Application health endpoints
-
--- Security Considerations
-
-1. **API Security**
-   - API Gateway authorization
-   - Request validation
-   - Rate limiting
-
-2. **Database Security**
-   - Connection pooling
-   - Prepared statements
-   - Minimal privilege access
-
-3. **Environment Security**
-   - Secrets management
-   - Environment isolation
-   - Access control
+MIT
